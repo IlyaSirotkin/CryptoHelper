@@ -1,10 +1,11 @@
 package applogger
 
 import (
+	"fmt"
 	"os"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type applogger struct{}
@@ -16,37 +17,45 @@ var (
 
 func GetLogger() *applogger {
 	once.Do(func() {
-		log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
+		logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
+		logrus.SetLevel(logrus.DebugLevel)
 		instance = &applogger{}
 	})
 	return instance
 }
 
 func (l *applogger) Info(msg string) {
-	log.Info(msg)
+	logrus.Info(msg)
 }
 
 func (l *applogger) Debug(msg string) {
-	log.Debug(msg)
+	logrus.Debug(msg)
 }
 
 func (l *applogger) Warning(msg string) {
-	log.Warn(msg)
+	logrus.Warn(msg)
 }
 
 func (l *applogger) Error(msg string) {
-	log.Error(msg)
+	logrus.Error(msg)
 }
 
 func (l *applogger) Fatal(msg string) {
-	log.Fatal(msg)
+	logrus.Fatal(msg)
 }
 
 func (l *applogger) SetOutputFile(fileName string) error {
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		return err
+	dirName := os.Getenv("LOG_DIR_NAME")
+	err1 := os.MkdirAll(dirName, 0755)
+	if err1 != nil && !os.IsExist(err1) {
+		return fmt.Errorf("Error with log's file folder: %w", err1)
 	}
-	log.SetOutput(file)
+	filePathName := dirName + "/" + fileName
+	file, err2 := os.OpenFile(filePathName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err2 != nil {
+		return fmt.Errorf("Error with log's file opening: %w", err2)
+	}
+
+	logrus.SetOutput(file)
 	return nil
 }
