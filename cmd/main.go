@@ -1,8 +1,8 @@
 package main
 
 import (
-	"cryptoHelper/pkg/applogger"
-	"cryptoHelper/pkg/logger"
+	exchange "cryptoHelper/internal/datasource/exchange_datasource"
+	logger "cryptoHelper/pkg/applogger"
 	"fmt"
 	"os"
 
@@ -11,13 +11,23 @@ import (
 )
 
 func main() {
-	godotenv.Load("config/env_file.env")
-	var logger logger.Logger = applogger.GetLogger()
-	err := logger.SetOutputFile(os.Getenv("LOG_FILE_NAME"))
+
+	err := godotenv.Load("config/env_file.env")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	err = logger.Get().SetOutputFile(os.Getenv("LOG_FILE_NAME"))
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	} else {
+		logger.Get().Debug("logger has successfully opened log file")
+	}
+	ex := exchange.Exchange{}
+	data, _ := ex.ExtractCurrentPrice("BTCUSDT")
+	fmt.Println(data)
 	/*bot, err := tgBotAPI.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
 	if err != nil {
 	}*/

@@ -1,5 +1,5 @@
-package bot_interface
+package display_interface
 
-type Bot interface {
+type Display interface {
 	SendMessage() string
 }

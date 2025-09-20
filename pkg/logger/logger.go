@@ -1,6 +1,6 @@
 package logger
 
-type Logger interface {
+type logger interface {
 	Info(msg string)
 	Debug(msg string)
 	Warning(msg string)
@@ -8,3 +8,5 @@ type Logger interface {
 	Error(msg string)
 	SetOutputFile(fileName string) error
 }
+
+func Get() *logger
