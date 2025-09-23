@@ -48,12 +48,12 @@ func (l *applogger) SetOutputFile(fileName string) error {
 	dirName := os.Getenv("LOG_DIR_NAME")
 	err1 := os.MkdirAll(dirName, 0755)
 	if err1 != nil && !os.IsExist(err1) {
-		return fmt.Errorf("Error with log's file folder: %w", err1)
+		return fmt.Errorf("error with log's file folder: %w", err1)
 	}
 	filePathName := dirName + "/" + fileName
 	file, err2 := os.OpenFile(filePathName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err2 != nil {
-		return fmt.Errorf("Error with log's file opening: %w", err2)
+		return fmt.Errorf("error with log's file opening: %w", err2)
 	}
 
 	logrus.SetOutput(file)
