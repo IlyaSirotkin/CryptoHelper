@@ -9,5 +9,5 @@ type Service interface {
 	SetOutput(display_interface.Display) error
 	SetInput(datasource_interface.Datasource) error
 	GetData(string) (float32, error)
-	SendData()
+	SendData(string) error
 }

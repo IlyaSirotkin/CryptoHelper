@@ -5,6 +5,7 @@ import (
 	"cryptoHelper/internal/display/display_interface"
 	logger "cryptoHelper/pkg/applogger"
 	"errors"
+	"fmt"
 	"os"
 
 	tgBotAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -58,4 +59,16 @@ func (t Telegram) GetData(currencyName string) (float32, error) {
 	}
 }
 
-func (t Telegram) SendData()
+func (t Telegram) SendData(message string) error {
+	if t.display != nil {
+		err := t.display.SendMessage(message)
+		if err != nil {
+			return fmt.Errorf("SendMessage return error%w", err)
+		}
+		logger.Get().Debug("Display_handler called SendData() successfully")
+		return nil
+	} else {
+		logger.Get().Error("Display_interface is nil, SendData() operation cannot be completed")
+		return errors.New("display_interface is nil, operation can not be completed")
+	}
+}

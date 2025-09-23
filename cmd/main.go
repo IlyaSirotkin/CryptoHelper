@@ -29,7 +29,7 @@ func main() {
 	datasourceHandler := datasource_handler.NewHandler(exchange.NewExchange())
 	data, _ := datasourceHandler.GetData("SOLUSDT")
 	fmt.Println(data)
-	/*bot, err := tgBotAPI.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
-	if err != nil {
-	}*/
+	/*
+		if err != nil {
+		}*/
 }
