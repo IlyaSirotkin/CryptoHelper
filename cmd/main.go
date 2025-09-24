@@ -1,8 +1,11 @@
 package main
 
 import (
-	"cryptoHelper/internal/datasource/datasource_handler"
-	exchange "cryptoHelper/internal/datasource/exchange_datasource"
+	"cryptoHelper/internal/datasource/exchange_datasource"
+	"cryptoHelper/internal/display/display_interface"
+	"cryptoHelper/internal/display/telegram_display"
+	"cryptoHelper/internal/service/service_interface"
+	"cryptoHelper/internal/service/telegram_service"
 	logger "cryptoHelper/pkg/applogger"
 	setup "cryptoHelper/setup"
 	"fmt"
@@ -26,10 +29,27 @@ func main() {
 		logger.Get().Debug("logger has successfully opened log file")
 	}
 
-	datasourceHandler := datasource_handler.NewHandler(exchange.NewExchange())
-	data, _ := datasourceHandler.GetData("SOLUSDT")
-	fmt.Println(data)
-	/*
-		if err != nil {
-		}*/
+	var service service_interface.Service
+	service, err = telegram_service.NewTelegram("TELEGRAM_BOT_TOKEN")
+	if err != nil {
+		logger.Get().Error("Telegram service returned error: " + fmt.Sprint(err))
+		os.Exit(1)
+	}
+
+	err = service.SetInput(exchange_datasource.NewExchange())
+	if err != nil {
+		logger.Get().Error("Service SetInput exchange returned error: " + fmt.Sprint(err))
+		os.Exit(1)
+	}
+
+	service.SetOutput(
+		func() display_interface.Display {
+			bot, err := telegram_display.NewBot("TELEGRAM_BOT_TOKEN")
+			if err != nil {
+				logger.Get().Error("Telegram display Bot returned error: " + fmt.Sprint(err))
+				os.Exit(1)
+			}
+			return bot
+		}(),
+	)
 }

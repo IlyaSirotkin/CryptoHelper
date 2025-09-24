@@ -3,6 +3,7 @@ package telegram_service
 import (
 	"cryptoHelper/internal/datasource/datasource_interface"
 	"cryptoHelper/internal/display/display_interface"
+	"cryptoHelper/internal/display/telegram_display"
 	logger "cryptoHelper/pkg/applogger"
 	"errors"
 	"fmt"
@@ -27,6 +28,7 @@ func NewTelegram(token string) (*Telegram, error) {
 		return &Telegram{botAPI: bot}, nil
 	}
 }
+
 func (t Telegram) SetInput(dsrc datasource_interface.Datasource) error {
 	if dsrc == nil {
 		logger.Get().Error("Datasource is nil in Telegram SetInput")
@@ -70,5 +72,30 @@ func (t Telegram) SendData(message string) error {
 	} else {
 		logger.Get().Error("Display_interface is nil, SendData() operation cannot be completed")
 		return errors.New("display_interface is nil, operation can not be completed")
+	}
+}
+
+func (t *Telegram) Update() {
+	updateConfig := tgBotAPI.NewUpdate(0)
+	updateConfig.Timeout = 60
+
+	updateChan := t.botAPI.GetUpdatesChan(updateConfig)
+
+	for update := range updateChan {
+		if update.Message != nil {
+			chatID := update.Message.Chat.ID
+
+			telegram_display.SetChatID(chatID, t.display.(*telegram_display.Bot))
+			text := update.Message.Text
+
+			switch text {
+			case "/start":
+
+			case "/help":
+
+			default:
+
+			}
+		}
 	}
 }

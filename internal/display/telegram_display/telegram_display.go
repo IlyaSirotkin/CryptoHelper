@@ -1,24 +1,28 @@
 package telegram_display
 
 import (
-	"errors"
 	"fmt"
+	"os"
 
 	tgBotAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type Bot struct {
-	chatID int64
-	botAPI *tgBotAPI.BotAPI
+func SetChatID(id int64, b *Bot) {
+	b.chatID = id
 }
 
-func NewTelegram(bot *tgBotAPI.BotAPI, id int64) (*Bot, error) {
-	if bot != nil {
-		return &Bot{botAPI: bot, chatID: id}, nil
-	} else {
-		return nil, errors.New("tgBotAPI is nil in Bot constructor")
-	}
+type Bot struct {
+	botAPI *tgBotAPI.BotAPI
+	chatID int64
+}
 
+func NewBot(token string) (*Bot, error) {
+	bot, err := tgBotAPI.NewBotAPI(os.Getenv(token))
+	if bot != nil && err == nil {
+		return &Bot{botAPI: bot}, nil
+	} else {
+		return nil, fmt.Errorf("tgBotAPI is nil in Bot constructor%w", err)
+	}
 }
 
 func (t Bot) SendMessage(message string) error {
