@@ -7,10 +7,10 @@ import (
 	"cryptoHelper/internal/service/service_interface"
 	"cryptoHelper/internal/service/telegram_service"
 	logger "cryptoHelper/pkg/applogger"
+	"cryptoHelper/pkg/error_handler"
 	setup "cryptoHelper/setup"
 	"fmt"
 	"os"
-	//  tgBotAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func main() {
@@ -31,25 +31,21 @@ func main() {
 
 	var service service_interface.Service
 	service, err = telegram_service.NewTelegram("TELEGRAM_BOT_TOKEN")
-	if err != nil {
-		logger.Get().Error("Telegram service returned error: " + fmt.Sprint(err))
-		os.Exit(1)
-	}
+	error_handler.ErrorCatch(err, "Telegram service returned error: ")
 
 	err = service.SetInput(exchange_datasource.NewExchange())
-	if err != nil {
-		logger.Get().Error("Service SetInput exchange returned error: " + fmt.Sprint(err))
-		os.Exit(1)
-	}
+	error_handler.ErrorCatch(err, "Service SetInput exchange returned error: ")
 
-	service.SetOutput(
+	err = service.SetOutput(
 		func() display_interface.Display {
-			bot, err := telegram_display.NewBot("TELEGRAM_BOT_TOKEN")
-			if err != nil {
-				logger.Get().Error("Telegram display Bot returned error: " + fmt.Sprint(err))
-				os.Exit(1)
-			}
-			return bot
+			sender, err := telegram_display.NewBotSender("TELEGRAM_BOT_TOKEN")
+			error_handler.ErrorCatch(err, "Telegram display Bot returned error: ")
+			return sender
 		}(),
 	)
+	error_handler.ErrorCatch(err, "Service Setoutput bot returned error: ")
+
+	err = service.Update()
+	error_handler.ErrorCatch(err, "Service Update returned error: ")
+
 }

@@ -10,4 +10,5 @@ type Service interface {
 	SetInput(datasource_interface.Datasource) error
 	GetData(string) (float32, error)
 	SendData(string) error
+	Update() error
 }
