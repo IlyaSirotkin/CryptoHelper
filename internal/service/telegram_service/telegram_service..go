@@ -23,8 +23,8 @@ type Telegram struct {
 func NewTelegram(token string) (*Telegram, error) {
 	bot, err := tgBotAPI.NewBotAPI(os.Getenv(token))
 	if err != nil {
-		logger.Get().Error("Telegram wasn't created NewBotAPI return err")
-		return nil, err
+		logger.Get().Error("NewTelegram :: Telegram wasn't created NewBotAPI return err")
+		return nil, fmt.Errorf("NewTelegram :: Telegram wasn't created NewBotAPI return err %w", err)
 	} else {
 		logger.Get().Debug("Telegram successfully created botAPI")
 		return &Telegram{botAPI: bot}, nil
@@ -67,13 +67,14 @@ func (t Telegram) SendData(message string) error {
 	if t.display != nil {
 		err := t.display.SendMessage(message)
 		if err != nil {
+			logger.Get().Error("SendMessage return error " + fmt.Sprint(err))
 			return fmt.Errorf("SendMessage return error %w", err)
 		}
 		logger.Get().Debug("Display_handler called SendData() successfully")
 		return nil
 	} else {
 		logger.Get().Error("Display_interface is nil, SendData() operation cannot be completed")
-		return errors.New("display_interface is nil, operation can not be completed")
+		return errors.New("display_interface is nil, SendData() operation can not be completed")
 	}
 }
 
@@ -92,15 +93,23 @@ func (t *Telegram) Update() error {
 
 			switch text {
 			case "/start":
-				t.display.SendMessage("Hello! The CryptoHelper is ready for your service.")
+				err := t.display.SendMessage("Hello! The CryptoHelper is ready for your service.")
+				if err != nil {
+					logger.Get().Error("command /start :: SendMessage return error " + fmt.Sprint(err))
+					return fmt.Errorf("command /start :: SendMessage return error %w", err)
+				}
 			case "/help":
-				t.display.SendMessage("CryptoHelper fetch price data from the Binance. Tap /prices to select currency and get current prices")
+				err := t.display.SendMessage("CryptoHelper fetch price data from the Binance. Tap /prices to select currency and get current prices")
+				if err != nil {
+					logger.Get().Error("command /help :: SendMessage return error " + fmt.Sprint(err))
+					return fmt.Errorf("command /help :: SendMessage return error %w", err)
+				}
 			case "/prices":
 				if t.swapDisplay == nil {
 					markupSender, err := telegram_display.NewBotMarkupSender("TELEGRAM_BOT_TOKEN")
 					if err != nil {
 						logger.Get().Error("NewBotMarkupSender return error " + fmt.Sprint(err))
-						return err
+						return fmt.Errorf("newBotMarkupSender return error %w", err)
 					}
 					t.swapDisplay = markupSender
 				}
@@ -116,11 +125,16 @@ func (t *Telegram) Update() error {
 				t.display = t.swapDisplay
 				t.swapDisplay = buffer
 				if err != nil {
-					logger.Get().Error("SendMessage return error" + fmt.Sprint(err))
-					return err
+					logger.Get().Error("Command /price :: SendMessage return error" + fmt.Sprint(err))
+					return fmt.Errorf("command  /price :: SendMessage return error %w", err)
 				}
 
 			default:
+				err := t.display.SendMessage("Unknown command")
+				if err != nil {
+					logger.Get().Error("Command default :: SendMessage return error " + fmt.Sprint(err))
+					return fmt.Errorf("command  default :: SendMessage return error %w", err)
+				}
 			}
 		} else {
 			data := update.CallbackQuery.Data
@@ -131,43 +145,43 @@ func (t *Telegram) Update() error {
 			case "btc_section":
 				price, err := t.GetData("BTC")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("btc_secrion :: GetData return error " + fmt.Sprint(err))
+					return fmt.Errorf("btc_secrion :: GetData return error %w", err)
 				}
 				response = "BTC price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			case "eth_section":
 				price, err := t.GetData("ETH")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("eth_secrion :: GetData return error " + fmt.Sprint(err))
+					return fmt.Errorf("eth_secrion :: GetData return error %w", err)
 				}
 				response = "ETH price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			case "sol_section":
 				price, err := t.GetData("SOL")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("sol_secrion :: GetData return error " + fmt.Sprint(err))
+					return fmt.Errorf("sol_secrion :: GetData return error %w", err)
 				}
 				response = "SOL price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			case "ada_section":
 				price, err := t.GetData("ADA")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("ada_secrion :: GetData return error " + fmt.Sprint(err))
+					return fmt.Errorf("ada_secrion :: GetData return error %w", err)
 				}
 				response = "ADA price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			case "xrp_section":
 				price, err := t.GetData("XRP")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("xrp_secrion :: GetData return error " + fmt.Sprint(err))
+					return fmt.Errorf("xrp_secrion :: GetData return error %w", err)
 				}
 				response = "XRP price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			case "ondo_section":
 				price, err := t.GetData("ONDO")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("ondo_secrion :: GetData return error " + fmt.Sprint(err))
+					return fmt.Errorf("ondo_secrion :: GetData return error %w", err)
 				}
 				response = "ONDO price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			default:
@@ -175,8 +189,11 @@ func (t *Telegram) Update() error {
 			}
 
 			telegram_display.SetSenderChatID(chatID, t.display.(*telegram_display.BotSender))
-			t.display.SendMessage(response)
-
+			err := t.display.SendMessage(response)
+			if err != nil {
+				logger.Get().Error("Send message cannot send response, return error " + fmt.Sprint(err))
+				return fmt.Errorf("send message cannot send response, return error %w", err)
+			}
 			callback := tgBotAPI.NewCallback(update.CallbackQuery.ID, "")
 			t.botAPI.Request(callback)
 

@@ -3,6 +3,7 @@ package exchange_datasource
 import (
 	logger "cryptoHelper/pkg/applogger"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -36,7 +37,7 @@ func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
 	responce, err := http.Get(os.Getenv("BINANCE_COIN_API") + currencyName + "USDT")
 
 	if err != nil {
-		logger.Get().Error("http requst finished with error: " + err.Error())
+		logger.Get().Error("http requst finished with error: " + fmt.Sprint(err))
 		return 0.0, err
 	}
 	defer responce.Body.Close()
@@ -44,13 +45,13 @@ func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
 	receivedData := &currentPriceSerialization{}
 	err = json.NewDecoder(responce.Body).Decode(receivedData)
 	if err != nil {
-		logger.Get().Error("http requst decoding has gone wrong: " + err.Error())
+		logger.Get().Error("http requst decoding has gone wrong: " + fmt.Sprint(err))
 		return 0.0, err
 	}
 
 	price, err := strconv.ParseFloat(receivedData.PriceUsd, 32)
 	if err != nil {
-		logger.Get().Error("string price has problem with float parsing: " + err.Error())
+		logger.Get().Error("string price has problem with float parsing: " + fmt.Sprint(err))
 		return 0.0, err
 	}
 

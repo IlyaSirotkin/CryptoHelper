@@ -31,21 +31,21 @@ func main() {
 
 	var service service_interface.Service
 	service, err = telegram_service.NewTelegram("TELEGRAM_BOT_TOKEN")
-	error_handler.ErrorCatch(err, "Telegram service returned error: ")
+	error_handler.ErrorCatch(err, "")
 
 	err = service.SetInput(exchange_datasource.NewExchange())
-	error_handler.ErrorCatch(err, "Service SetInput exchange returned error: ")
+	error_handler.ErrorCatch(err, "")
 
 	err = service.SetOutput(
 		func() display_interface.Display {
 			sender, err := telegram_display.NewBotSender("TELEGRAM_BOT_TOKEN")
-			error_handler.ErrorCatch(err, "Telegram display Bot returned error: ")
+			error_handler.ErrorCatch(err, "")
 			return sender
 		}(),
 	)
-	error_handler.ErrorCatch(err, "Service Setoutput bot returned error: ")
+	error_handler.ErrorCatch(err, "")
 
 	err = service.Update()
-	error_handler.ErrorCatch(err, "Service Update returned error: ")
+	error_handler.ErrorCatch(err, "")
 
 }

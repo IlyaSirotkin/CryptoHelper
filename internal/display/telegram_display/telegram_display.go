@@ -12,10 +12,6 @@ func SetSenderChatID(id int64, b *BotSender) {
 	b.chatID = id
 }
 
-func SetMarkupSenderChatID(id int64, b *BotMarkupSender) {
-	b.chatID = id
-}
-
 type BotSender struct {
 	botAPI *tgBotAPI.BotAPI
 	chatID int64
@@ -27,7 +23,7 @@ func NewBotSender(token string) (*BotSender, error) {
 		logger.Get().Debug("NewBotSender successfully created BotSender")
 		return &BotSender{botAPI: bot}, nil
 	} else {
-		logger.Get().Error("tgBotAPI NewBotAPI() return error")
+		logger.Get().Error("tgBotAPI NewBotAPI() return error " + fmt.Sprint(err))
 		return nil, fmt.Errorf("tgBotAPI is nil in Bot constructor%w", err)
 	}
 }
@@ -37,7 +33,7 @@ func (t BotSender) SendMessage(message string) error {
 	msg.ParseMode = "Markdown"
 	_, err := t.botAPI.Send(msg)
 	if err != nil {
-		logger.Get().Error("Send() return error in BotSender::SendMessage func")
+		logger.Get().Error("Send() return error in BotSender::SendMessage func " + fmt.Sprint(err))
 		return fmt.Errorf("send() return error in SendMessage func %w", err)
 	} else {
 		logger.Get().Debug("Send() in BotSender successfully send message")
@@ -50,13 +46,17 @@ type BotMarkupSender struct {
 	chatID int64
 }
 
+func SetMarkupSenderChatID(id int64, b *BotMarkupSender) {
+	b.chatID = id
+}
+
 func NewBotMarkupSender(token string) (*BotMarkupSender, error) {
 	bot, err := tgBotAPI.NewBotAPI(os.Getenv(token))
 	if bot != nil && err == nil {
 		logger.Get().Debug("NewBotMarkupSender successfully created BotMarkupSender")
 		return &BotMarkupSender{botAPI: bot}, nil
 	} else {
-		logger.Get().Error("tgBotAPI NewBotAPI() return error")
+		logger.Get().Error("tgBotAPI NewBotAPI() return error " + fmt.Sprint(err))
 		return nil, fmt.Errorf("tgBotAPI is nil in Bot constructor%w", err)
 	}
 }
@@ -77,7 +77,7 @@ func (t BotMarkupSender) SendMessage(message string) error {
 	)
 	_, err := t.botAPI.Send(msg)
 	if err != nil {
-		logger.Get().Error("Send() return error in BotMarkupSender::SendMessage func")
+		logger.Get().Error("Send() return error in BotMarkupSender::SendMessage func " + fmt.Sprint(err))
 		return fmt.Errorf("Send() return error in BotMarkupsender::SendMessage func %w", err)
 	} else {
 		logger.Get().Debug("Send() in BotMarkupSender successfully send message")
