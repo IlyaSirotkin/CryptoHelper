@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type applogger struct{}
@@ -19,6 +20,7 @@ func Get() *applogger {
 	once.Do(func() {
 		logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
 		logrus.SetLevel(logrus.DebugLevel)
+
 		instance = &applogger{}
 	})
 	return instance
@@ -51,11 +53,12 @@ func (l *applogger) SetOutputFile(fileName string) error {
 		return fmt.Errorf("error with log's file folder: %w", err1)
 	}
 	filePathName := dirName + "/" + fileName
-	file, err2 := os.OpenFile(filePathName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err2 != nil {
-		return fmt.Errorf("error with log's file opening: %w", err2)
-	}
-
-	logrus.SetOutput(file)
+	logrus.SetOutput(&lumberjack.Logger{
+		Filename:   filePathName,
+		MaxSize:    10,
+		MaxBackups: 5,
+		MaxAge:     30,
+		Compress:   true,
+	})
 	return nil
 }

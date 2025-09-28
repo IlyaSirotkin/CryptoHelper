@@ -2,6 +2,7 @@ package exchange_datasource
 
 import (
 	logger "cryptoHelper/pkg/applogger"
+	"cryptoHelper/pkg/memory"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -57,5 +58,6 @@ func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
 
 	logger.Get().Info(currencyName + " prices was successfully extracted")
 
+	memory.LogMemoryUsage()
 	return float32(price), nil
 }

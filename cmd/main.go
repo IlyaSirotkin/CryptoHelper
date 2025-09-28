@@ -6,31 +6,33 @@ import (
 	"cryptoHelper/internal/display/telegram_display"
 	"cryptoHelper/internal/service/service_interface"
 	"cryptoHelper/internal/service/telegram_service"
-	logger "cryptoHelper/pkg/applogger"
+
+	//logger "cryptoHelper/pkg/applogger"
 	"cryptoHelper/pkg/error_handler"
-	setup "cryptoHelper/setup"
-	"fmt"
-	"os"
+	//setup "cryptoHelper/setup"
+	//"fmt"
+	//"os"
 )
 
 func main() {
 
-	err := setup.SetENVreading("config/env_file.env")
+	/*err := setup.SetENVreading("config/env_file.env")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
-	}
+	}*/
 
-	err = setup.SetLogger()
+	/*err := setup.SetLogger()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	} else {
 		logger.Get().Debug("logger has successfully opened log file")
-	}
+	}*/
 
 	var service service_interface.Service
-	service, err = telegram_service.NewTelegram("TELEGRAM_BOT_TOKEN")
+
+	service, err := telegram_service.NewTelegram("TELEGRAM_BOT_TOKEN")
 	error_handler.ErrorCatch(err, "")
 
 	err = service.SetInput(exchange_datasource.NewExchange())
@@ -47,5 +49,5 @@ func main() {
 
 	err = service.Update()
 	error_handler.ErrorCatch(err, "")
-
+	select {}
 }

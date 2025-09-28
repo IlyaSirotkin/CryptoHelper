@@ -10,6 +10,8 @@ import (
 	"os"
 	"strconv"
 
+	"cryptoHelper/pkg/memory"
+
 	tgBotAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -196,7 +198,7 @@ func (t *Telegram) Update() error {
 			}
 			callback := tgBotAPI.NewCallback(update.CallbackQuery.ID, "")
 			t.botAPI.Request(callback)
-
+			memory.LogMemoryUsage()
 		}
 
 	}

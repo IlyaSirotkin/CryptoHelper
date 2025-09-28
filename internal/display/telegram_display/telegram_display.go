@@ -2,6 +2,7 @@ package telegram_display
 
 import (
 	logger "cryptoHelper/pkg/applogger"
+	"cryptoHelper/pkg/memory"
 	"fmt"
 	"os"
 
@@ -32,11 +33,13 @@ func (t BotSender) SendMessage(message string) error {
 	msg := tgBotAPI.NewMessage(t.chatID, message)
 	msg.ParseMode = "Markdown"
 	_, err := t.botAPI.Send(msg)
+	memory.LogMemoryUsage()
 	if err != nil {
 		logger.Get().Error("Send() return error in BotSender::SendMessage func " + fmt.Sprint(err))
 		return fmt.Errorf("send() return error in SendMessage func %w", err)
 	} else {
 		logger.Get().Debug("Send() in BotSender successfully send message")
+
 		return nil
 	}
 }
@@ -76,6 +79,7 @@ func (t BotMarkupSender) SendMessage(message string) error {
 		),
 	)
 	_, err := t.botAPI.Send(msg)
+	memory.LogMemoryUsage()
 	if err != nil {
 		logger.Get().Error("Send() return error in BotMarkupSender::SendMessage func " + fmt.Sprint(err))
 		return fmt.Errorf("Send() return error in BotMarkupsender::SendMessage func %w", err)
