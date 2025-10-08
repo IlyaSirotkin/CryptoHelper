@@ -7,14 +7,12 @@ import (
 	"cryptoHelper/internal/service/service_interface"
 	"cryptoHelper/internal/service/telegram_service"
 	logger "cryptoHelper/pkg/applogger"
-	"cryptoHelper/pkg/error_handler"
 	setup "cryptoHelper/setup"
 	"fmt"
 	"os"
 )
 
 func main() {
-
 	err := setup.SetENVreading("config/env_file.env")
 	if err != nil {
 		fmt.Println(err)
@@ -31,21 +29,36 @@ func main() {
 
 	var service service_interface.Service
 	service, err = telegram_service.NewTelegram("TELEGRAM_BOT_TOKEN")
-	error_handler.ErrorCatch(err, "")
+	if err != nil {
+		logger.Get().Error("New Telegram service return error " + fmt.Sprint(err))
+		os.Exit(1)
+	}
 
 	err = service.SetInput(exchange_datasource.NewExchange())
-	error_handler.ErrorCatch(err, "")
+	if err != nil {
+		logger.Get().Error("SetInput exchange_datasource return error" + fmt.Sprint(err))
+		os.Exit(1)
+	}
 
 	err = service.SetOutput(
 		func() display_interface.Display {
 			sender, err := telegram_display.NewBotSender("TELEGRAM_BOT_TOKEN")
-			error_handler.ErrorCatch(err, "")
+			if err != nil {
+				logger.Get().Error("Telegram display NewBotSender return error" + fmt.Sprint(err))
+				os.Exit(1)
+			}
 			return sender
 		}(),
 	)
-	error_handler.ErrorCatch(err, "")
+	if err != nil {
+		logger.Get().Error("SetOutput return error" + fmt.Sprint(err))
+		os.Exit(1)
+	}
 
 	err = service.Update()
-	error_handler.ErrorCatch(err, "")
+	if err != nil {
+		logger.Get().Error("Update return error" + fmt.Sprint(err))
+		os.Exit(1)
+	}
 
 }

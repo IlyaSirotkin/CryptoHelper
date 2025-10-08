@@ -2,14 +2,20 @@ package telegram_display
 
 import (
 	logger "cryptoHelper/pkg/applogger"
+	"errors"
 	"fmt"
 	"os"
 
 	tgBotAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func SetSenderChatID(id int64, b *BotSender) {
-	b.chatID = id
+func SetSenderChatID(id int64, b *BotSender) error {
+	if b != nil {
+		b.chatID = id
+		return nil
+	} else {
+		return errors.New("SetSenderChatID get nil as b* BotSender")
+	}
 }
 
 type BotSender struct {
@@ -46,8 +52,13 @@ type BotMarkupSender struct {
 	chatID int64
 }
 
-func SetMarkupSenderChatID(id int64, b *BotMarkupSender) {
-	b.chatID = id
+func SetMarkupSenderChatID(id int64, b *BotMarkupSender) error {
+	if b != nil {
+		b.chatID = id
+		return nil
+	} else {
+		return errors.New("SetSenderChatID get nil as b* BotSender")
+	}
 }
 
 func NewBotMarkupSender(token string) (*BotMarkupSender, error) {

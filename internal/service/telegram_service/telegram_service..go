@@ -42,6 +42,8 @@ func (t *Telegram) SetInput(dsrc datasource_interface.Datasource) error {
 	}
 }
 
+func (t *Telegram) SetEngine() {}
+
 func (t *Telegram) SetOutput(dspl display_interface.Display) error {
 	if dspl == nil {
 		logger.Get().Error("Display is nil in Telegram SetOutput")
@@ -88,7 +90,14 @@ func (t *Telegram) Update() error {
 		if update.Message != nil {
 			chatID := update.Message.Chat.ID
 
-			telegram_display.SetSenderChatID(chatID, t.display.(*telegram_display.BotSender))
+			telegram_display.SetSenderChatID(chatID, func() *telegram_display.BotSender {
+				botSender, ok := t.display.(*telegram_display.BotSender)
+				if ok {
+					return botSender
+				} else {
+					return nil
+				}
+			}())
 			text := update.Message.Text
 
 			switch text {
@@ -117,7 +126,14 @@ func (t *Telegram) Update() error {
 				t.display = t.swapDisplay
 				t.swapDisplay = buffer
 
-				telegram_display.SetMarkupSenderChatID(chatID, t.display.(*telegram_display.BotMarkupSender))
+				telegram_display.SetMarkupSenderChatID(chatID, func() *telegram_display.BotMarkupSender {
+					botSender, ok := t.display.(*telegram_display.BotMarkupSender)
+					if ok {
+						return botSender
+					} else {
+						return nil
+					}
+				}())
 
 				err := t.display.SendMessage("Select currency to get current price: ")
 
@@ -188,7 +204,15 @@ func (t *Telegram) Update() error {
 				response = "Currency wasn't chosen"
 			}
 
-			telegram_display.SetSenderChatID(chatID, t.display.(*telegram_display.BotSender))
+			telegram_display.SetSenderChatID(chatID, func() *telegram_display.BotSender {
+				botSender, ok := t.display.(*telegram_display.BotSender)
+				if ok {
+					return botSender
+				} else {
+					return nil
+				}
+			}())
+
 			err := t.display.SendMessage(response)
 			if err != nil {
 				logger.Get().Error("Send message cannot send response, return error " + fmt.Sprint(err))

@@ -34,16 +34,17 @@ func NewExchange() *Exchange {
 
 func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
 
-	responce, err := http.Get(os.Getenv("BINANCE_COIN_API") + currencyName + "USDT")
+	request := os.Getenv("BINANCE_COIN_API") + currencyName + "USDT"
+	response, err := http.Get(request)
 
 	if err != nil {
 		logger.Get().Error("http requst finished with error: " + fmt.Sprint(err))
 		return 0.0, err
 	}
-	defer responce.Body.Close()
+	defer response.Body.Close()
 
 	receivedData := &currentPriceSerialization{}
-	err = json.NewDecoder(responce.Body).Decode(receivedData)
+	err = json.NewDecoder(response.Body).Decode(receivedData)
 	if err != nil {
 		logger.Get().Error("http requst decoding has gone wrong: " + fmt.Sprint(err))
 		return 0.0, err
