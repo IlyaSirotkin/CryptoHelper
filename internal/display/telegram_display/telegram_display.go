@@ -95,3 +95,15 @@ func (t BotMarkupSender) SendMessage(message string) error {
 		return nil
 	}
 }
+
+type MockBotSender struct {
+	messagesDump []string
+}
+
+func NewMockBotSender() *MockBotSender {
+	return &MockBotSender{}
+}
+func (t *MockBotSender) SendMessage(message string) error {
+	t.messagesDump = append(t.messagesDump, message)
+	return nil
+}

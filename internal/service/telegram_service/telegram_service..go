@@ -58,7 +58,7 @@ func (t *Telegram) SetOutput(dspl display_interface.Display) error {
 func (t Telegram) GetData(currencyName string) (float32, error) {
 	if t.datasource != nil {
 		logger.Get().Debug("Datasource_handler called ExtractCurrentPrice() successfully")
-		return t.datasource.ExtractCurrentPrice(currencyName)
+		return t.datasource.ExtractData(currencyName)
 	} else {
 		logger.Get().Error("Datasource_interface is nil, GetData() operation cannot be completed")
 		return 0.0, errors.New("datasource_interface is nil, operation can not be completed")
@@ -90,7 +90,7 @@ func (t *Telegram) Update() error {
 		if update.Message != nil {
 			chatID := update.Message.Chat.ID
 
-			telegram_display.SetSenderChatID(chatID, func() *telegram_display.BotSender {
+			err := telegram_display.SetSenderChatID(chatID, func() *telegram_display.BotSender {
 				botSender, ok := t.display.(*telegram_display.BotSender)
 				if ok {
 					return botSender
@@ -98,6 +98,10 @@ func (t *Telegram) Update() error {
 					return nil
 				}
 			}())
+			if err != nil {
+				logger.Get().Error(fmt.Sprint(err))
+				return err
+			}
 			text := update.Message.Text
 
 			switch text {
@@ -122,11 +126,9 @@ func (t *Telegram) Update() error {
 					}
 					t.swapDisplay = markupSender
 				}
-				buffer := t.display
-				t.display = t.swapDisplay
-				t.swapDisplay = buffer
+				t.display, t.swapDisplay = t.swapDisplay, t.display
 
-				telegram_display.SetMarkupSenderChatID(chatID, func() *telegram_display.BotMarkupSender {
+				err := telegram_display.SetMarkupSenderChatID(chatID, func() *telegram_display.BotMarkupSender {
 					botSender, ok := t.display.(*telegram_display.BotMarkupSender)
 					if ok {
 						return botSender
@@ -134,12 +136,14 @@ func (t *Telegram) Update() error {
 						return nil
 					}
 				}())
+				if err != nil {
+					logger.Get().Error(fmt.Sprint(err))
+					return err
+				}
+				err = t.display.SendMessage("Select currency to get current price: ")
 
-				err := t.display.SendMessage("Select currency to get current price: ")
+				t.display, t.swapDisplay = t.swapDisplay, t.display
 
-				buffer = t.display
-				t.display = t.swapDisplay
-				t.swapDisplay = buffer
 				if err != nil {
 					logger.Get().Error("Command /price :: SendMessage return error" + fmt.Sprint(err))
 					return fmt.Errorf("command  /price :: SendMessage return error %w", err)
@@ -153,6 +157,7 @@ func (t *Telegram) Update() error {
 				}
 			}
 		} else {
+
 			data := update.CallbackQuery.Data
 			chatID := update.CallbackQuery.Message.Chat.ID
 
@@ -204,7 +209,7 @@ func (t *Telegram) Update() error {
 				response = "Currency wasn't chosen"
 			}
 
-			telegram_display.SetSenderChatID(chatID, func() *telegram_display.BotSender {
+			err := telegram_display.SetSenderChatID(chatID, func() *telegram_display.BotSender {
 				botSender, ok := t.display.(*telegram_display.BotSender)
 				if ok {
 					return botSender
@@ -212,8 +217,11 @@ func (t *Telegram) Update() error {
 					return nil
 				}
 			}())
-
-			err := t.display.SendMessage(response)
+			if err != nil {
+				logger.Get().Error(fmt.Sprint(err))
+				return err
+			}
+			err = t.display.SendMessage(response)
 			if err != nil {
 				logger.Get().Error("Send message cannot send response, return error " + fmt.Sprint(err))
 				return fmt.Errorf("send message cannot send response, return error %w", err)

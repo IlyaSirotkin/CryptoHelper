@@ -8,5 +8,5 @@ const (
 )*/
 
 type Datasource interface {
-	ExtractCurrentPrice(string) (float32, error)
+	ExtractData(string) (float32, error)
 }

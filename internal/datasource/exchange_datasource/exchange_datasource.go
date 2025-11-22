@@ -32,7 +32,7 @@ func NewExchange() *Exchange {
 	return &Exchange{}
 }
 
-func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
+func (ex *Exchange) ExtractData(currencyName string) (float32, error) {
 
 	request := os.Getenv("BINANCE_COIN_API") + currencyName + "USDT"
 	response, err := http.Get(request)
