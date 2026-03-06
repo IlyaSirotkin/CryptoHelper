@@ -25,6 +25,7 @@ type BotSender struct {
 
 func NewBotSender(token string) (*BotSender, error) {
 	bot, err := tgBotAPI.NewBotAPI(os.Getenv(token))
+
 	if bot != nil && err == nil {
 		logger.Get().Debug("NewBotSender successfully created BotSender")
 		return &BotSender{botAPI: bot}, nil
@@ -94,16 +95,4 @@ func (t BotMarkupSender) SendMessage(message string) error {
 		logger.Get().Debug("Send() in BotMarkupSender successfully send message")
 		return nil
 	}
-}
-
-type MockBotSender struct {
-	messagesDump []string
-}
-
-func NewMockBotSender() *MockBotSender {
-	return &MockBotSender{}
-}
-func (t *MockBotSender) SendMessage(message string) error {
-	t.messagesDump = append(t.messagesDump, message)
-	return nil
 }
