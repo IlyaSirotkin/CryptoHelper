@@ -47,5 +47,5 @@ func main() {
 
 	err = service.Update()
 	error_handler.ErrorCatch(err, "Service Update returned error: ")
-
+	select {}
 }

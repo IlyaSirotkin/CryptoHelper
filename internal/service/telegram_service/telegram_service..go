@@ -183,5 +183,6 @@ func (t *Telegram) Update() error {
 		}
 
 	}
+
 	return nil
 }

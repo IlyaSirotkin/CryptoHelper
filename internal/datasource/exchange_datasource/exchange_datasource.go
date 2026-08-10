@@ -8,17 +8,6 @@ import (
 	"strconv"
 )
 
-/*
-type Interval int
-const (
-
-	Day Interval = iota
-	Week
-	Month
-
-)
-*/
-
 type currentPriceSerialization struct {
 	CoinName string `json:"symbol"`
 	PriceUsd string `json:"price"`
