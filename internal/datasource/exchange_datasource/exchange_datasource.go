@@ -14,15 +14,16 @@ type currentPriceSerialization struct {
 }
 
 type Exchange struct {
+	exchageURL string
 }
 
-func NewExchange() *Exchange {
-	return &Exchange{}
+func NewExchange(url_env string) *Exchange {
+	return &Exchange{exchageURL: os.Getenv(url_env)}
 }
 
 func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
 
-	responce, err := http.Get(os.Getenv("BINANCE_COIN_API") + currencyName + "USDT")
+	responce, err := http.Get(ex.exchageURL + currencyName + "USDT")
 
 	if err != nil {
 		logger.Get().Error("http requst finished with error: " + err.Error())

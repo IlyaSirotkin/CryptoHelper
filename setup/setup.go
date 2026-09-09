@@ -19,6 +19,7 @@ func SetENVreading(envFilePath string) error {
 
 func SetLogger() error {
 	err := logger.Get().SetOutputFile(os.Getenv("LOG_FILE_NAME"))
+
 	if err != nil {
 		return fmt.Errorf("error with logger's output file opening: %w", err)
 	} else {

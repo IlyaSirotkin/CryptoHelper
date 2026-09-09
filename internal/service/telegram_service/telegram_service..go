@@ -104,17 +104,14 @@ func (t *Telegram) Update() error {
 					}
 					t.swapDisplay = markupSender
 				}
-				buffer := t.display
-				t.display = t.swapDisplay
-				t.swapDisplay = buffer
+
+				t.display, t.swapDisplay = t.swapDisplay, t.display
 
 				telegram_display.SetMarkupSenderChatID(chatID, t.display.(*telegram_display.BotMarkupSender))
 
 				err := t.display.SendMessage("Select currency to get current price: ")
 
-				buffer = t.display
-				t.display = t.swapDisplay
-				t.swapDisplay = buffer
+				t.display, t.swapDisplay = t.swapDisplay, t.display
 				if err != nil {
 					logger.Get().Error("SendMessage return error" + fmt.Sprint(err))
 					return err

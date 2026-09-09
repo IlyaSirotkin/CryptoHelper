@@ -33,7 +33,7 @@ func main() {
 	service, err = telegram_service.NewTelegram("TELEGRAM_BOT_TOKEN")
 	error_handler.ErrorCatch(err, "Telegram service returned error: ")
 
-	err = service.SetInput(exchange_datasource.NewExchange())
+	err = service.SetInput(exchange_datasource.NewExchange("BINANCE_COIN_API"))
 	error_handler.ErrorCatch(err, "Service SetInput exchange returned error: ")
 
 	err = service.SetOutput(

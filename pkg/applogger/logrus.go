@@ -18,7 +18,8 @@ var (
 func Get() *applogger {
 	once.Do(func() {
 		logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
-		logrus.SetLevel(logrus.InfoLevel)
+		logrus.SetLevel(logrus.DebugLevel)
+
 		instance = &applogger{}
 	})
 	return instance
