@@ -1,6 +1,7 @@
 package main
 
 import (
+	rediscache "cryptoHelper/internal/cache/redis_cache"
 	"cryptoHelper/internal/datasource/exchange_datasource"
 	"cryptoHelper/internal/display/display_interface"
 	"cryptoHelper/internal/display/telegram_display"
@@ -30,10 +31,14 @@ func main() {
 	}
 
 	var service service_interface.Service
+
 	service, err = telegram_service.NewTelegram("TELEGRAM_BOT_TOKEN")
 	error_handler.ErrorCatch(err, "Telegram service returned error: ")
 
-	err = service.SetInput(exchange_datasource.NewExchange("BINANCE_COIN_API"))
+	err = service.SetInput(exchange_datasource.NewExchange(os.Getenv("BINANCE_COIN_API")))
+	error_handler.ErrorCatch(err, "Service SetInput exchange returned error: ")
+
+	err = service.SetCache(rediscache.NewRedisHandler(os.Getenv("REDIS_ADDRESS"), os.Getenv("REDIS_PASSWORD")))
 	error_handler.ErrorCatch(err, "Service SetInput exchange returned error: ")
 
 	err = service.SetOutput(

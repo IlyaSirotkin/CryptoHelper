@@ -4,7 +4,6 @@ import (
 	logger "cryptoHelper/pkg/applogger"
 	"encoding/json"
 	"net/http"
-	"os"
 	"strconv"
 )
 
@@ -18,7 +17,7 @@ type Exchange struct {
 }
 
 func NewExchange(url_env string) *Exchange {
-	return &Exchange{exchageURL: os.Getenv(url_env)}
+	return &Exchange{exchageURL: url_env}
 }
 
 func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
@@ -26,7 +25,7 @@ func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
 	responce, err := http.Get(ex.exchageURL + currencyName + "USDT")
 
 	if err != nil {
-		logger.Get().Error("http requst finished with error: " + err.Error())
+		logger.Get().Debug("http requst finished with error ")
 		return 0.0, err
 	}
 	defer responce.Body.Close()
@@ -34,13 +33,13 @@ func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
 	receivedData := &currentPriceSerialization{}
 	err = json.NewDecoder(responce.Body).Decode(receivedData)
 	if err != nil {
-		logger.Get().Error("http requst decoding has gone wrong: " + err.Error())
+		logger.Get().Debug("http requst decoding has gone wrong ")
 		return 0.0, err
 	}
 
 	price, err := strconv.ParseFloat(receivedData.PriceUsd, 32)
 	if err != nil {
-		logger.Get().Error("string price has problem with float parsing: " + err.Error())
+		logger.Get().Debug("string price has problem with float parsing ")
 		return 0.0, err
 	}
 

@@ -1,6 +1,7 @@
 package telegram_service
 
 import (
+	cacheinterface "cryptoHelper/internal/cache/cache_interface"
 	"cryptoHelper/internal/datasource/datasource_interface"
 	"cryptoHelper/internal/display/display_interface"
 	"cryptoHelper/internal/display/telegram_display"
@@ -18,6 +19,7 @@ type Telegram struct {
 	datasource  datasource_interface.Datasource
 	display     display_interface.Display
 	swapDisplay display_interface.Display
+	cache       cacheinterface.CacheHandler
 }
 
 func NewTelegram(token string) (*Telegram, error) {
@@ -38,6 +40,17 @@ func (t *Telegram) SetInput(dsrc datasource_interface.Datasource) error {
 	} else {
 		t.datasource = dsrc
 		logger.Get().Debug("Telegram service was successfully set input device")
+		return nil
+	}
+}
+
+func (t *Telegram) SetCache(cache cacheinterface.CacheHandler) error {
+	if cache == nil {
+		logger.Get().Error("Cache is nil in Telegram SetCache")
+		return errors.New("Cache is nil in Telegram SetCache")
+	} else {
+		t.cache = cache
+		logger.Get().Debug("Telegram service was successfully set cache device")
 		return nil
 	}
 }
@@ -78,6 +91,7 @@ func (t Telegram) SendData(message string) error {
 }
 
 func (t *Telegram) Update() error {
+
 	updateConfig := tgBotAPI.NewUpdate(0)
 	updateConfig.Timeout = 60
 
@@ -133,6 +147,7 @@ func (t *Telegram) Update() error {
 				}
 				response = "BTC price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			case "eth_section":
+
 				price, err := t.GetData("ETH")
 				if err != nil {
 					logger.Get().Error("GetData return error")
