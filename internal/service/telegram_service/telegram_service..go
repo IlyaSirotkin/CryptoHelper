@@ -1,6 +1,7 @@
 package telegram_service
 
 import (
+	"context"
 	cacheinterface "cryptoHelper/internal/cache/cache_interface"
 	"cryptoHelper/internal/datasource/datasource_interface"
 	"cryptoHelper/internal/display/display_interface"
@@ -12,7 +13,10 @@ import (
 	"strconv"
 
 	tgBotAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/redis/go-redis/v9"
 )
+
+const NotExist = redis.Nil
 
 type Telegram struct {
 	botAPI      *tgBotAPI.BotAPI
@@ -66,7 +70,7 @@ func (t *Telegram) SetOutput(dspl display_interface.Display) error {
 	}
 }
 
-func (t Telegram) GetData(currencyName string) (float32, error) {
+func (t Telegram) GetData(currencyName string) (float64, error) {
 	if t.datasource != nil {
 		logger.Get().Debug("Datasource_handler called ExtractCurrentPrice() successfully")
 		return t.datasource.ExtractCurrentPrice(currencyName)
@@ -96,6 +100,13 @@ func (t *Telegram) Update() error {
 	updateConfig.Timeout = 60
 
 	updateChan := t.botAPI.GetUpdatesChan(updateConfig)
+
+	ctx := context.Background()
+	err := t.cache.Connect(ctx)
+	if err != nil {
+		logger.Get().Error("Redis connection failed " + err.Error())
+		panic(err)
+	}
 
 	for update := range updateChan {
 		if update.Message != nil {
@@ -138,50 +149,62 @@ func (t *Telegram) Update() error {
 			chatID := update.CallbackQuery.Message.Chat.ID
 
 			var response string
+
+			//Добавим вспомогательную функцию которая заменит куски повторяющегося кода
+			getDataFunc := func(currency string) (string, error) {
+				price, redisErr := t.cache.Read(ctx, currency)
+				if redisErr == nil {
+					logger.Get().Info(fmt.Sprintf("Redis succsecfully Read(%s) price", currency))
+					response = fmt.Sprintf("%s price: "+strconv.FormatFloat(float64(price), 'f', 2, 64)+" "+currency, currency)
+				} else {
+					logger.Get().Error(fmt.Sprintf("Redis failed with Read %s price", currency) + redisErr.Error())
+					price, err := t.GetData(currency)
+					if err != nil {
+						logger.Get().Error("GetData return error")
+						return "", err
+					}
+					if redisErr == NotExist {
+						err := t.cache.Write(ctx, currency, price)
+						if err != nil {
+							logger.Get().Error(fmt.Sprintf("Redis failed with Write %s price", currency) + redisErr.Error())
+							return "", err
+						}
+					}
+					response = fmt.Sprintf("%s price: "+strconv.FormatFloat(float64(price), 'f', 2, 64)+" USD", currency)
+				}
+				return response, err
+			}
 			switch data {
 			case "btc_section":
-				price, err := t.GetData("BTC")
+				response, err = getDataFunc("BTC")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("getDataFunc return error")
 				}
-				response = "BTC price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			case "eth_section":
-
-				price, err := t.GetData("ETH")
+				response, err = getDataFunc("ETH")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("getDataFunc return error")
 				}
-				response = "ETH price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			case "sol_section":
-				price, err := t.GetData("SOL")
+				response, err = getDataFunc("SOL")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("getDataFunc() return error")
 				}
-				response = "SOL price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			case "ada_section":
-				price, err := t.GetData("ADA")
+				response, err = getDataFunc("ADA")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("getDataFunc() return error")
 				}
-				response = "ADA price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			case "xrp_section":
-				price, err := t.GetData("XRP")
+				response, err = getDataFunc("XRP")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("getDataFunc() return error")
 				}
-				response = "XRP price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			case "ondo_section":
-				price, err := t.GetData("ONDO")
+				response, err = getDataFunc("ONDO")
 				if err != nil {
-					logger.Get().Error("GetData return error")
-					return err
+					logger.Get().Error("getDataFunc() return error")
 				}
-				response = "ONDO price: " + strconv.FormatFloat(float64(price), 'f', 2, 32) + " USD"
 			default:
 				response = "Currency wasn't chosen"
 			}

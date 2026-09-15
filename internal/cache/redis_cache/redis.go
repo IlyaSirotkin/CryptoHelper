@@ -44,6 +44,7 @@ func (rds *RedisHadler) Read(ctx context.Context, key string) (float64, error) {
 		logger.Get().Debug("Redis Get finished with error")
 		return 0.0, err
 	}
+
 	price, err := strconv.ParseFloat(val, 32)
 	if err != nil {
 		logger.Get().Debug("string price has problem with float parsing ")

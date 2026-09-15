@@ -20,7 +20,7 @@ func NewExchange(url_env string) *Exchange {
 	return &Exchange{exchageURL: url_env}
 }
 
-func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
+func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float64, error) {
 
 	responce, err := http.Get(ex.exchageURL + currencyName + "USDT")
 
@@ -37,7 +37,7 @@ func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
 		return 0.0, err
 	}
 
-	price, err := strconv.ParseFloat(receivedData.PriceUsd, 32)
+	price, err := strconv.ParseFloat(receivedData.PriceUsd, 64)
 	if err != nil {
 		logger.Get().Debug("string price has problem with float parsing ")
 		return 0.0, err
@@ -45,5 +45,5 @@ func (ex *Exchange) ExtractCurrentPrice(currencyName string) (float32, error) {
 
 	logger.Get().Info(currencyName + " prices was successfully extracted")
 
-	return float32(price), nil
+	return price, nil
 }

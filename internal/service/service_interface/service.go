@@ -10,7 +10,7 @@ type Service interface {
 	SetCache(cacheinterface.CacheHandler) error
 	SetOutput(display_interface.Display) error
 	SetInput(datasource_interface.Datasource) error
-	GetData(string) (float32, error)
+	GetData(string) (float64, error)
 	SendData(string) error
 	Update() error
 }
