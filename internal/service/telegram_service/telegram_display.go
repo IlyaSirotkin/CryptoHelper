@@ -1,4 +1,4 @@
-package telegram_display
+package telegram_service
 
 import (
 	logger "cryptoHelper/pkg/applogger"
@@ -8,21 +8,12 @@ import (
 	tgBotAPI "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func SetSenderChatID(id int64, b *BotSender) {
-	b.chatID = id
-}
-
-func SetMarkupSenderChatID(id int64, b *BotMarkupSender) {
-	b.chatID = id
-}
-
 type BotSender struct {
-	botAPI *tgBotAPI.BotAPI
-	chatID int64
+	msg tgBotAPI.MessageConfig
 }
 
 func NewBotSender(token string) (*BotSender, error) {
-	bot, err := tgBotAPI.NewBotAPI(os.Getenv(token))
+	bot, err := tgBotAPI.NewBotAPI(token)
 	if bot != nil && err == nil {
 		logger.Get().Debug("NewBotSender successfully created BotSender")
 		return &BotSender{botAPI: bot}, nil

@@ -19,11 +19,12 @@ import (
 const NotExist = redis.Nil
 
 type Telegram struct {
-	botAPI      *tgBotAPI.BotAPI
-	datasource  datasource_interface.Datasource
-	display     display_interface.Display
-	swapDisplay display_interface.Display
-	cache       cacheinterface.CacheHandler
+	botAPI        *tgBotAPI.BotAPI
+	datasource    datasource_interface.Datasource
+	display       display_interface.Display
+	markupDisplay display_interface.Display
+	swapDisplay   display_interface.Display
+	cache         cacheinterface.CacheHandler
 }
 
 func NewTelegram(token string) (*Telegram, error) {
@@ -100,124 +101,147 @@ func (t *Telegram) Update() error {
 	updateConfig.Timeout = 60
 
 	updateChan := t.botAPI.GetUpdatesChan(updateConfig)
-
 	ctx := context.Background()
+
 	err := t.cache.Connect(ctx)
 	if err != nil {
 		logger.Get().Error("Redis connection failed " + err.Error())
 		panic(err)
 	}
 
-	for update := range updateChan {
-		if update.Message != nil {
-			chatID := update.Message.Chat.ID
+	errChan := make(chan (error))
+	defer close(errChan)
 
-			telegram_display.SetSenderChatID(chatID, t.display.(*telegram_display.BotSender))
-			text := update.Message.Text
+	for {
+		select {
+		case update := <-updateChan:
 
-			switch text {
-			case "/start":
-				t.display.SendMessage("Hello! The CryptoHelper is ready for your service.")
-			case "/help":
-				t.display.SendMessage("CryptoHelper fetch price data from the Binance. Tap /prices to select currency and get current prices")
-			case "/prices":
-				if t.swapDisplay == nil {
-					markupSender, err := telegram_display.NewBotMarkupSender("TELEGRAM_BOT_TOKEN")
-					if err != nil {
-						logger.Get().Error("NewBotMarkupSender return error " + fmt.Sprint(err))
-						return err
-					}
-					t.swapDisplay = markupSender
-				}
+			if update.Message != nil {
+				go func(update tgBotAPI.Update) {
+					chatID := update.Message.Chat.ID
 
-				t.display, t.swapDisplay = t.swapDisplay, t.display
+					telegram_display.SetSenderChatID(chatID, t.display.(*telegram_display.BotSender))
+					text := update.Message.Text
 
-				telegram_display.SetMarkupSenderChatID(chatID, t.display.(*telegram_display.BotMarkupSender))
-
-				err := t.display.SendMessage("Select currency to get current price: ")
-
-				t.display, t.swapDisplay = t.swapDisplay, t.display
-				if err != nil {
-					logger.Get().Error("SendMessage return error" + fmt.Sprint(err))
-					return err
-				}
-
-			default:
-			}
-		} else {
-			data := update.CallbackQuery.Data
-			chatID := update.CallbackQuery.Message.Chat.ID
-
-			var response string
-
-			//Добавим вспомогательную функцию которая заменит куски повторяющегося кода
-			getDataFunc := func(currency string) (string, error) {
-				price, redisErr := t.cache.Read(ctx, currency)
-				if redisErr == nil {
-					logger.Get().Info(fmt.Sprintf("Redis succsecfully Read(%s) price", currency))
-					response = fmt.Sprintf("%s price: "+strconv.FormatFloat(float64(price), 'f', 2, 64)+" "+currency, currency)
-				} else {
-					logger.Get().Error(fmt.Sprintf("Redis failed with Read %s price", currency) + redisErr.Error())
-					price, err := t.GetData(currency)
-					if err != nil {
-						logger.Get().Error("GetData return error")
-						return "", err
-					}
-					if redisErr == NotExist {
-						err := t.cache.Write(ctx, currency, price)
-						if err != nil {
-							logger.Get().Error(fmt.Sprintf("Redis failed with Write %s price", currency) + redisErr.Error())
-							return "", err
+					switch text {
+					case "/start":
+						t.display.SendMessage("Hello! The CryptoHelper is ready for your service.")
+					case "/help":
+						t.display.SendMessage("CryptoHelper fetch price data from the Binance. Tap /prices to select currency and get current prices")
+					case "/prices":
+						if t.swapDisplay == nil {
+							markupSender, err := telegram_display.NewBotMarkupSender("TELEGRAM_BOT_TOKEN")
+							if err != nil {
+								logger.Get().Error("NewBotMarkupSender return error " + fmt.Sprint(err))
+								errChan <- err
+								return
+							}
+							t.swapDisplay = markupSender
 						}
+
+						t.display, t.swapDisplay = t.swapDisplay, t.display
+
+						telegram_display.SetMarkupSenderChatID(chatID, t.display.(*telegram_display.BotMarkupSender))
+
+						err := t.display.SendMessage("Select currency to get current price: ")
+
+						t.display, t.swapDisplay = t.swapDisplay, t.display
+						if err != nil {
+							logger.Get().Error("SendMessage return error" + fmt.Sprint(err))
+							errChan <- err
+							return
+						}
+
+					default:
 					}
-					response = fmt.Sprintf("%s price: "+strconv.FormatFloat(float64(price), 'f', 2, 64)+" USD", currency)
-				}
-				return response, err
+				}(update)
+			} else {
+				go func(ctx context.Context, update tgBotAPI.Update) {
+
+					chatID := update.CallbackQuery.Message.Chat.ID
+					data := update.CallbackQuery.Data
+					var response string
+
+					//Добавим вспомогательную функцию которая заменит куски повторяющегося кода
+					getDataFunc := func(currency string) (string, error) {
+						price, redisErr := t.cache.Read(ctx, currency)
+						if redisErr == nil {
+							logger.Get().Info(fmt.Sprintf("Redis succsecfully Read(%s) price", currency))
+							response = fmt.Sprintf("%s price: "+strconv.FormatFloat(float64(price), 'f', 2, 64)+" USD", currency)
+						} else {
+
+							price, err := t.GetData(currency)
+							if err != nil {
+								logger.Get().Error("GetData return error")
+								return "", err
+							}
+							if redisErr == NotExist {
+								logger.Get().Debug(fmt.Sprintf("Redis hasn't got %s price", currency) + redisErr.Error())
+								err := t.cache.Write(ctx, currency, price)
+								if err != nil {
+									logger.Get().Error(fmt.Sprintf("Redis failed with Write %s price", currency) + redisErr.Error())
+									return "", err
+								}
+							} else {
+								logger.Get().Error(fmt.Sprintf("Redis failed with Read %s price", currency) + redisErr.Error())
+								return "", err
+							}
+							response = fmt.Sprintf("%s price: "+strconv.FormatFloat(float64(price), 'f', 2, 64)+" USD", currency)
+						}
+						return response, err
+					}
+					switch data {
+					case "btc_section":
+						response, err = getDataFunc("BTC")
+						if err != nil {
+							logger.Get().Error("getDataFunc return error")
+							errChan <- err
+						}
+					case "eth_section":
+						response, err = getDataFunc("ETH")
+						if err != nil {
+							logger.Get().Error("getDataFunc return error")
+							errChan <- err
+						}
+					case "sol_section":
+						response, err = getDataFunc("SOL")
+						if err != nil {
+							logger.Get().Error("getDataFunc() return error")
+							errChan <- err
+						}
+					case "ada_section":
+						response, err = getDataFunc("ADA")
+						if err != nil {
+							logger.Get().Error("getDataFunc() return error")
+							errChan <- err
+						}
+					case "xrp_section":
+						response, err = getDataFunc("XRP")
+						if err != nil {
+							logger.Get().Error("getDataFunc() return error")
+							errChan <- err
+						}
+					case "ondo_section":
+						response, err = getDataFunc("ONDO")
+						if err != nil {
+							logger.Get().Error("getDataFunc() return error")
+							errChan <- err
+						}
+					default:
+						response = "Currency wasn't chosen"
+					}
+
+					telegram_display.SetSenderChatID(chatID, t.display.(*telegram_display.BotSender))
+					t.display.SendMessage(response)
+
+					callback := tgBotAPI.NewCallback(update.CallbackQuery.ID, "")
+					t.botAPI.Request(callback)
+				}(ctx, update)
 			}
-			switch data {
-			case "btc_section":
-				response, err = getDataFunc("BTC")
-				if err != nil {
-					logger.Get().Error("getDataFunc return error")
-				}
-			case "eth_section":
-				response, err = getDataFunc("ETH")
-				if err != nil {
-					logger.Get().Error("getDataFunc return error")
-				}
-			case "sol_section":
-				response, err = getDataFunc("SOL")
-				if err != nil {
-					logger.Get().Error("getDataFunc() return error")
-				}
-			case "ada_section":
-				response, err = getDataFunc("ADA")
-				if err != nil {
-					logger.Get().Error("getDataFunc() return error")
-				}
-			case "xrp_section":
-				response, err = getDataFunc("XRP")
-				if err != nil {
-					logger.Get().Error("getDataFunc() return error")
-				}
-			case "ondo_section":
-				response, err = getDataFunc("ONDO")
-				if err != nil {
-					logger.Get().Error("getDataFunc() return error")
-				}
-			default:
-				response = "Currency wasn't chosen"
-			}
-
-			telegram_display.SetSenderChatID(chatID, t.display.(*telegram_display.BotSender))
-			t.display.SendMessage(response)
-
-			callback := tgBotAPI.NewCallback(update.CallbackQuery.ID, "")
-			t.botAPI.Request(callback)
-
+		case err := <-errChan:
+			logger.Get().Error("Update return err ")
+			return err
 		}
-
 	}
 
-	return nil
 }

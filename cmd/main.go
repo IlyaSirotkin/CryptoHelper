@@ -46,7 +46,7 @@ func main() {
 
 	err = service.SetOutput(
 		func() display_interface.Display {
-			sender, err := telegram_display.NewBotSender("TELEGRAM_BOT_TOKEN")
+			sender, err := telegram_display.NewBotSender(os.Getenv("TELEGRAM_BOT_TOKEN"))
 			error_handler.ErrorCatch(err, "Telegram display Bot returned error: ")
 			return sender
 		}(),
