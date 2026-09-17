@@ -41,23 +41,21 @@ func (rds *RedisHadler) Connect(ctx context.Context) error {
 func (rds *RedisHadler) Read(ctx context.Context, key string) (float64, error) {
 	val, err := rds.rdb.Get(ctx, key).Result()
 	if err != nil {
-		logger.Get().Debug("Redis Get finished with error")
 		return 0.0, err
 	}
 
 	price, err := strconv.ParseFloat(val, 32)
 	if err != nil {
-		logger.Get().Debug("string price has problem with float parsing ")
+		logger.Get().Error("string price has problem with float parsing ")
 		return 0.0, err
 	}
-	logger.Get().Info("Redis REad finished succsecfully ")
+	logger.Get().Info("Redis Read finished succsecfully ")
 	return price, nil
 }
 
 func (rds *RedisHadler) Write(ctx context.Context, key string, val float64) error {
 	err := rds.rdb.Set(ctx, key, strconv.FormatFloat(val, 'f', 2, 64), 10*time.Second).Err()
 	if err != nil {
-		logger.Get().Debug("Redis Set finished with error")
 		return err
 	}
 	logger.Get().Info("Redis Write finished succsecfully ")
@@ -67,7 +65,7 @@ func (rds *RedisHadler) Write(ctx context.Context, key string, val float64) erro
 func (rds *RedisHadler) CloseConnection() error {
 	err := rds.rdb.Close()
 	if err != nil {
-		logger.Get().Debug("Redis CLose finished with error")
+		logger.Get().Debug("Redis Close() finished with error")
 		return err
 	}
 	return nil
