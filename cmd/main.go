@@ -14,13 +14,14 @@ import (
 
 func main() {
 
-	err := setup.SetENVreading("config/env_file.env")
+	//Теперь окружение храниться как ENV в контейнере
+	/*err := setup.SetENVreading("config/env_file.env")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
-	}
+	}*/
 
-	err = setup.SetLogger()
+	err := setup.SetLogger()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
